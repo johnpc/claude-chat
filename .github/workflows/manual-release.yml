@@ -1,0 +1,130 @@
+name: Manual Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.0.0)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        type: boolean
+        default: false
+      release_notes:
+        description: 'Release notes'
+        required: false
+        type: string
+        default: 'Manual release'
+
+permissions:
+  contents: write  # Required for creating releases
+
+jobs:
+  manual-release:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+    
+    - name: Build ClaudeChat
+      run: |
+        echo "Building ClaudeChat version ${{ github.event.inputs.version }}"
+        
+        # Build the project for release without code signing
+        xcodebuild -scheme ClaudeChat \
+          -destination 'platform=macOS' \
+          -configuration Release \
+          -derivedDataPath ./DerivedData \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO \
+          build
+    
+    - name: Create App Bundle
+      run: |
+        # Find the built app
+        APP_PATH=$(find ./DerivedData -name "ClaudeChat.app" -type d | head -1)
+        
+        if [ -z "$APP_PATH" ]; then
+          echo "Error: ClaudeChat.app not found"
+          exit 1
+        fi
+        
+        echo "Found app at: $APP_PATH"
+        
+        # Create a zip file of the app
+        cd "$(dirname "$APP_PATH")"
+        zip -r "ClaudeChat-${{ github.event.inputs.version }}-macOS.zip" ClaudeChat.app
+        
+        # Move to workspace root
+        mv "ClaudeChat-${{ github.event.inputs.version }}-macOS.zip" "$GITHUB_WORKSPACE/"
+        
+        # Also create a generic name for consistency
+        cp "$GITHUB_WORKSPACE/ClaudeChat-${{ github.event.inputs.version }}-macOS.zip" "$GITHUB_WORKSPACE/ClaudeChat-macOS.zip"
+    
+    - name: Create Git Tag
+      run: |
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+        git tag -a "${{ github.event.inputs.version }}" -m "Release ${{ github.event.inputs.version }}"
+        git push origin "${{ github.event.inputs.version }}"
+    
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.event.inputs.version }}
+        release_name: ClaudeChat ${{ github.event.inputs.version }}
+        body: |
+          ## ClaudeChat ${{ github.event.inputs.version }}
+          
+          ${{ github.event.inputs.release_notes }}
+          
+          ### Build Information
+          - Built from commit: ${{ github.sha }}
+          - Branch: ${{ github.ref_name }}
+          - Build date: ${{ steps.date.outputs.date }}
+          
+          ### Installation
+          1. Download `ClaudeChat-macOS.zip`
+          2. Extract the zip file
+          3. Move `ClaudeChat.app` to your Applications folder
+          4. Configure AWS credentials in `~/.aws/credentials`
+          5. Launch the app
+          
+          ### Requirements
+          - macOS 12.0 or later
+          - AWS account with Bedrock access
+          - Claude model access in AWS Bedrock
+          
+          ### Security Note
+          The app may show a security warning on first launch. Right-click the app and select "Open" to bypass Gatekeeper, or run:
+          ```bash
+          xattr -dr com.apple.quarantine /Applications/ClaudeChat.app
+          ```
+        draft: false
+        prerelease: ${{ github.event.inputs.prerelease }}
+    
+    - name: Get current date
+      id: date
+      run: echo "date=$(date +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_OUTPUT
+    
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./ClaudeChat-macOS.zip
+        asset_name: ClaudeChat-macOS.zip
+        asset_content_type: application/zip

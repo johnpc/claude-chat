@@ -6,6 +6,16 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		1D1BED192E19BF3B00DEDD7D /* AWSBedrock in Frameworks */ = {isa = PBXBuildFile; productRef = 1D1BED182E19BF3B00DEDD7D /* AWSBedrock */; };
+		1D1BED1B2E19BF3B00DEDD7D /* AWSBedrockAgent in Frameworks */ = {isa = PBXBuildFile; productRef = 1D1BED1A2E19BF3B00DEDD7D /* AWSBedrockAgent */; };
+		1D1BED1D2E19BF3B00DEDD7D /* AWSBedrockAgentRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = 1D1BED1C2E19BF3B00DEDD7D /* AWSBedrockAgentRuntime */; };
+		1D1BED1F2E19BF3B00DEDD7D /* AWSBedrockDataAutomation in Frameworks */ = {isa = PBXBuildFile; productRef = 1D1BED1E2E19BF3B00DEDD7D /* AWSBedrockDataAutomation */; };
+		1D1BED212E19BF3B00DEDD7D /* AWSBedrockDataAutomationRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = 1D1BED202E19BF3B00DEDD7D /* AWSBedrockDataAutomationRuntime */; };
+		1D1BED232E19BF3B00DEDD7D /* AWSBedrockRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = 1D1BED222E19BF3B00DEDD7D /* AWSBedrockRuntime */; };
+		1D1BED252E19BF3B00DEDD7D /* AWSClientRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = 1D1BED242E19BF3B00DEDD7D /* AWSClientRuntime */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		1D1BECE22E199AE400DEDD7D /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +62,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1D1BED1F2E19BF3B00DEDD7D /* AWSBedrockDataAutomation in Frameworks */,
+				1D1BED192E19BF3B00DEDD7D /* AWSBedrock in Frameworks */,
+				1D1BED232E19BF3B00DEDD7D /* AWSBedrockRuntime in Frameworks */,
+				1D1BED1B2E19BF3B00DEDD7D /* AWSBedrockAgent in Frameworks */,
+				1D1BED212E19BF3B00DEDD7D /* AWSBedrockDataAutomationRuntime in Frameworks */,
+				1D1BED252E19BF3B00DEDD7D /* AWSClientRuntime in Frameworks */,
+				1D1BED1D2E19BF3B00DEDD7D /* AWSBedrockAgentRuntime in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +129,13 @@
 			);
 			name = ClaudeChat;
 			packageProductDependencies = (
+				1D1BED182E19BF3B00DEDD7D /* AWSBedrock */,
+				1D1BED1A2E19BF3B00DEDD7D /* AWSBedrockAgent */,
+				1D1BED1C2E19BF3B00DEDD7D /* AWSBedrockAgentRuntime */,
+				1D1BED1E2E19BF3B00DEDD7D /* AWSBedrockDataAutomation */,
+				1D1BED202E19BF3B00DEDD7D /* AWSBedrockDataAutomationRuntime */,
+				1D1BED222E19BF3B00DEDD7D /* AWSBedrockRuntime */,
+				1D1BED242E19BF3B00DEDD7D /* AWSClientRuntime */,
 			);
 			productName = ClaudeChat;
 			productReference = 1D1BECCE2E199AE100DEDD7D /* ClaudeChat.app */;
@@ -195,6 +219,9 @@
 			);
 			mainGroup = 1D1BECC52E199AE100DEDD7D;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				1D1BED172E19A22200DEDD7D /* XCRemoteSwiftPackageReference "aws-sdk-swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 1D1BECCF2E199AE100DEDD7D /* Products */;
 			projectDirPath = "";
@@ -551,6 +578,55 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		1D1BED172E19A22200DEDD7D /* XCRemoteSwiftPackageReference "aws-sdk-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/awslabs/aws-sdk-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.3.49;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		1D1BED182E19BF3B00DEDD7D /* AWSBedrock */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1D1BED172E19A22200DEDD7D /* XCRemoteSwiftPackageReference "aws-sdk-swift" */;
+			productName = AWSBedrock;
+		};
+		1D1BED1A2E19BF3B00DEDD7D /* AWSBedrockAgent */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1D1BED172E19A22200DEDD7D /* XCRemoteSwiftPackageReference "aws-sdk-swift" */;
+			productName = AWSBedrockAgent;
+		};
+		1D1BED1C2E19BF3B00DEDD7D /* AWSBedrockAgentRuntime */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1D1BED172E19A22200DEDD7D /* XCRemoteSwiftPackageReference "aws-sdk-swift" */;
+			productName = AWSBedrockAgentRuntime;
+		};
+		1D1BED1E2E19BF3B00DEDD7D /* AWSBedrockDataAutomation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1D1BED172E19A22200DEDD7D /* XCRemoteSwiftPackageReference "aws-sdk-swift" */;
+			productName = AWSBedrockDataAutomation;
+		};
+		1D1BED202E19BF3B00DEDD7D /* AWSBedrockDataAutomationRuntime */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1D1BED172E19A22200DEDD7D /* XCRemoteSwiftPackageReference "aws-sdk-swift" */;
+			productName = AWSBedrockDataAutomationRuntime;
+		};
+		1D1BED222E19BF3B00DEDD7D /* AWSBedrockRuntime */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1D1BED172E19A22200DEDD7D /* XCRemoteSwiftPackageReference "aws-sdk-swift" */;
+			productName = AWSBedrockRuntime;
+		};
+		1D1BED242E19BF3B00DEDD7D /* AWSClientRuntime */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1D1BED172E19A22200DEDD7D /* XCRemoteSwiftPackageReference "aws-sdk-swift" */;
+			productName = AWSClientRuntime;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 1D1BECC62E199AE100DEDD7D /* Project object */;
 }

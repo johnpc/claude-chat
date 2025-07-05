@@ -1,0 +1,120 @@
+name: Build and Release ClaudeChat
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers on version tags like v1.0.0
+  workflow_dispatch:  # Allows manual triggering
+
+permissions:
+  contents: write  # Required for creating releases
+
+jobs:
+  build-and-release:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+    
+    - name: Build ClaudeChat
+      run: |
+        # Build the project for release without code signing
+        xcodebuild -scheme ClaudeChat \
+          -destination 'platform=macOS' \
+          -configuration Release \
+          -derivedDataPath ./DerivedData \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO \
+          build
+    
+    - name: Create App Bundle
+      run: |
+        # Find the built app
+        APP_PATH=$(find ./DerivedData -name "ClaudeChat.app" -type d | head -1)
+        
+        if [ -z "$APP_PATH" ]; then
+          echo "Error: ClaudeChat.app not found"
+          exit 1
+        fi
+        
+        echo "Found app at: $APP_PATH"
+        
+        # Create a zip file of the app
+        cd "$(dirname "$APP_PATH")"
+        zip -r ClaudeChat-macOS.zip ClaudeChat.app
+        
+        # Move to workspace root
+        mv ClaudeChat-macOS.zip "$GITHUB_WORKSPACE/"
+        
+        # Verify the zip was created
+        ls -la "$GITHUB_WORKSPACE/ClaudeChat-macOS.zip"
+    
+    - name: Get version from tag
+      id: get_version
+      run: |
+        if [[ $GITHUB_REF == refs/tags/* ]]; then
+          VERSION=${GITHUB_REF#refs/tags/}
+        else
+          VERSION="dev-$(date +%Y%m%d-%H%M%S)"
+        fi
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Version: $VERSION"
+    
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.get_version.outputs.version }}
+        release_name: ClaudeChat ${{ steps.get_version.outputs.version }}
+        body: |
+          ## ClaudeChat ${{ steps.get_version.outputs.version }}
+          
+          ### What's New
+          - Built from commit ${{ github.sha }}
+          - macOS application bundle included
+          
+          ### Installation
+          1. Download `ClaudeChat-macOS.zip`
+          2. Extract the zip file
+          3. Move `ClaudeChat.app` to your Applications folder
+          4. Configure AWS credentials in `~/.aws/credentials`
+          5. Launch the app
+          
+          ### Requirements
+          - macOS 12.0 or later
+          - AWS account with Bedrock access
+          - Claude model access in AWS Bedrock
+          
+          ### Security Note
+          The app may show a security warning on first launch. Right-click the app and select "Open" to bypass Gatekeeper, or run:
+          ```bash
+          xattr -dr com.apple.quarantine /Applications/ClaudeChat.app
+          ```
+        draft: false
+        prerelease: false
+    
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./ClaudeChat-macOS.zip
+        asset_name: ClaudeChat-macOS.zip
+        asset_content_type: application/zip
+    
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ClaudeChat-${{ steps.get_version.outputs.version }}
+        path: ClaudeChat-macOS.zip
+        retention-days: 30
