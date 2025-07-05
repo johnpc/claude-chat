@@ -10,9 +10,13 @@ import SwiftData
 
 @main
 struct ClaudeChatApp: App {
+    @StateObject private var windowManager = WindowManager.shared
+    @StateObject private var hotkeyManager = GlobalHotkeyManager.shared
+    
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            Conversation.self,
+            ChatMessage.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -26,7 +30,25 @@ struct ClaudeChatApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .onAppear {
+                    // Register the global hotkey when the app starts
+                    hotkeyManager.registerGlobalHotkey()
+                }
         }
         .modelContainer(sharedModelContainer)
+        .commands {
+            CommandGroup(after: .newItem) {
+                Button("New Quick Chat Window") {
+                    windowManager.openNewChatWindow()
+                }
+                .keyboardShortcut("n", modifiers: [.command, .shift])
+            }
+            
+            CommandGroup(replacing: .help) {
+                Button("Request Accessibility Permissions") {
+                    hotkeyManager.requestAccessibilityPermissions()
+                }
+            }
+        }
     }
 }

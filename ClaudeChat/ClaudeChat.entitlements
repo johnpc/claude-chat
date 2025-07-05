@@ -6,5 +6,40 @@
 	<true/>
 	<key>com.apple.security.files.user-selected.read-only</key>
 	<true/>
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<key>com.apple.security.files.user-selected.read-write</key>
+	<true/>
+	<key>com.apple.security.files.downloads.read-write</key>
+	<true/>
+	<key>com.apple.security.files.bookmarks.app-scope</key>
+	<true/>
+	<key>com.apple.security.personal-information.location</key>
+	<true/>
+	<key>com.apple.security.temporary-exception.files.home-relative-path.read-only</key>
+	<array>
+		<string>.aws/</string>
+		<string>.aws/credentials</string>
+		<string>.aws/config</string>
+	</array>
+	<key>com.apple.security.temporary-exception.files.absolute-path.read-only</key>
+	<array>
+		<string>/Users/xss/.aws/credentials</string>
+		<string>/Users/xss/.aws/config</string>
+	</array>
+	<key>com.apple.security.network.server</key>
+	<false/>
+	<key>com.apple.security.temporary-exception.network.outbound</key>
+	<array>
+		<string>*.amazonaws.com</string>
+		<string>bedrock-runtime.us-east-1.amazonaws.com</string>
+		<string>bedrock.us-east-1.amazonaws.com</string>
+	</array>
+	<key>com.apple.security.automation.apple-events</key>
+	<true/>
+	<key>com.apple.security.device.audio-input</key>
+	<false/>
+	<key>com.apple.security.device.camera</key>
+	<false/>
 </dict>
 </plist>
