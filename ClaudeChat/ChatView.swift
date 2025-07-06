@@ -64,22 +64,30 @@ struct ChatView: View {
                     .padding(.horizontal)
             }
             
-            // Input area
-            HStack {
-                TextField("Type your message...", text: $messageText, axis: .vertical)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .lineLimit(1...5)
-                    .onSubmit {
-                        sendMessage()
-                    }
+            // Input area with image generation hint
+            VStack(spacing: 8) {
+                // Hint text
+                Text("💡 Try: \"Generate an image of a sunset over mountains\" or ask any question")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal)
                 
-                Button(action: sendMessage) {
-                    Image(systemName: "paperplane.fill")
-                        .foregroundColor(messageText.isEmpty ? .gray : .blue)
+                HStack {
+                    TextField("Type your message...", text: $messageText, axis: .vertical)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .lineLimit(1...5)
+                        .onSubmit {
+                            sendMessage()
+                        }
+                    
+                    Button(action: sendMessage) {
+                        Image(systemName: "paperplane.fill")
+                            .foregroundColor(messageText.isEmpty ? .gray : .blue)
+                    }
+                    .disabled(messageText.isEmpty || isLoading)
                 }
-                .disabled(messageText.isEmpty || isLoading)
+                .padding()
             }
-            .padding()
         }
         .navigationTitle(conversation.title)
     }
@@ -98,7 +106,8 @@ struct ChatView: View {
         let userChatMessage = ChatMessage(
             content: userMessage,
             isFromUser: true,
-            conversationId: conversation.id
+            conversationId: conversation.id,
+            messageType: .text
         )
         modelContext.insert(userChatMessage)
         
@@ -109,14 +118,17 @@ struct ChatView: View {
         
         Task {
             do {
-                let response = try await claudeService.sendMessage(userMessage, conversationHistory: messages)
+                // Use the enhanced processMessage method
+                let response = try await claudeService.processMessage(userMessage, conversationHistory: messages)
                 
                 await MainActor.run {
                     // Add Claude's response to database
                     let claudeMessage = ChatMessage(
-                        content: response,
+                        content: response.text,
                         isFromUser: false,
-                        conversationId: conversation.id
+                        conversationId: conversation.id,
+                        messageType: response.isImageGeneration ? .image : .text,
+                        imageURL: response.imageURL?.absoluteString
                     )
                     modelContext.insert(claudeMessage)
                     
@@ -131,7 +143,7 @@ struct ChatView: View {
                             do {
                                 let generatedTitle = try await claudeService.generateConversationTitle(
                                     userMessage: userMessage,
-                                    assistantResponse: response
+                                    assistantResponse: response.text
                                 )
                                 
                                 await MainActor.run {
@@ -180,10 +192,45 @@ struct MessageBubble: View {
                 .frame(maxWidth: .infinity * 0.8, alignment: .trailing)
             } else {
                 VStack(alignment: .leading) {
-                    Text(message.content)
-                        .padding(12)
-                        .background(Color.gray.opacity(0.2))
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                    // Message content
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(message.content)
+                            .padding(12)
+                            .background(Color.gray.opacity(0.2))
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                        
+                        // Display image if this is an image message
+                        if message.messageType == .image, 
+                           let imageURLString = message.imageURL,
+                           let imageURL = URL(string: imageURLString) {
+                            AsyncImage(url: imageURL) { image in
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(maxWidth: 300, maxHeight: 300)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                    )
+                            } placeholder: {
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.gray.opacity(0.2))
+                                    .frame(width: 300, height: 200)
+                                    .overlay(
+                                        ProgressView()
+                                    )
+                            }
+                            .contextMenu {
+                                Button("Save Image") {
+                                    saveImageToDesktop(url: imageURL)
+                                }
+                                Button("Copy Image") {
+                                    copyImageToClipboard(url: imageURL)
+                                }
+                            }
+                        }
+                    }
                     
                     Text(message.timestamp, style: .time)
                         .font(.caption2)
@@ -192,6 +239,37 @@ struct MessageBubble: View {
                 .frame(maxWidth: .infinity * 0.8, alignment: .leading)
                 Spacer()
             }
+        }
+    }
+    
+    private func saveImageToDesktop(url: URL) {
+        guard let desktopURL = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first else {
+            print("Could not access desktop directory")
+            return
+        }
+        
+        let destinationURL = desktopURL.appendingPathComponent("ClaudeChat_Image_\(UUID().uuidString).png")
+        
+        do {
+            let imageData = try Data(contentsOf: url)
+            try imageData.write(to: destinationURL)
+            print("Image saved to desktop: \(destinationURL.path)")
+        } catch {
+            print("Failed to save image to desktop: \(error)")
+        }
+    }
+    
+    private func copyImageToClipboard(url: URL) {
+        do {
+            let imageData = try Data(contentsOf: url)
+            if let image = NSImage(data: imageData) {
+                let pasteboard = NSPasteboard.general
+                pasteboard.clearContents()
+                pasteboard.writeObjects([image])
+                print("Image copied to clipboard")
+            }
+        } catch {
+            print("Failed to copy image to clipboard: \(error)")
         }
     }
 }

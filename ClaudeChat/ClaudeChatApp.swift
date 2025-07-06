@@ -18,12 +18,54 @@ struct ClaudeChatApp: App {
             Conversation.self,
             ChatMessage.self,
         ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        
+        // Create a unique URL for the database to force a fresh start if needed
+        let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let storeURL = appSupportURL.appendingPathComponent("ClaudeChat.sqlite")
+        
+        let modelConfiguration = ModelConfiguration(
+            url: storeURL,
+            allowsSave: true,
+            cloudKitDatabase: .none
+        )
 
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            print("⚠️ ModelContainer creation failed: \(error)")
+            
+            // If there's a schema mismatch, delete the old database and create fresh
+            do {
+                // Remove old database files
+                let fileManager = FileManager.default
+                if fileManager.fileExists(atPath: storeURL.path) {
+                    try fileManager.removeItem(at: storeURL)
+                    print("🗑️ Removed old database due to schema mismatch")
+                }
+                
+                // Also remove related files
+                let shmURL = storeURL.appendingPathExtension("shm")
+                let walURL = storeURL.appendingPathExtension("wal")
+                
+                if fileManager.fileExists(atPath: shmURL.path) {
+                    try fileManager.removeItem(at: shmURL)
+                }
+                if fileManager.fileExists(atPath: walURL.path) {
+                    try fileManager.removeItem(at: walURL)
+                }
+                
+                let freshConfiguration = ModelConfiguration(
+                    url: storeURL,
+                    allowsSave: true,
+                    cloudKitDatabase: .none
+                )
+                let container = try ModelContainer(for: schema, configurations: [freshConfiguration])
+                print("✅ Created fresh ModelContainer after clearing old data")
+                return container
+            } catch {
+                print("❌ Failed to create fresh ModelContainer: \(error)")
+                fatalError("Could not create ModelContainer: \(error)")
+            }
         }
     }()
 
